@@ -76,10 +76,12 @@ def validate_target_data(data):
     try:
         data_dict = json.loads(data)
     except json.decoder.JSONDecodeError as json_error:
-        raise TargetFileFormatException("クライアント要望ファイルに不備があります", json_error)
+        print("クライアント要望ファイルに不備があります")
+        raise TargetFileFormatException
 
     if len(data_dict["keys"]) > 2:
-        sys.exit("クライアント要望ファイルにキーが２つ以上指定されています")
+        print("クライアント要望ファイルにキーが２つ以上指定されています")
+        raise TargetFileFormatException
 
     return data_dict
 
@@ -88,13 +90,16 @@ def validate_event_log(log):
     try:
         log_dict = json.loads(log)
     except json.decoder.JSONDecodeError as json_error:
-        raise LogFormatException("ログの形式が不正です", json_error)
+        print("ログの形式が不正です")
+        raise LogFormatException
 
     if not log_dict.get("appli_id") or not log_dict.get("event"):
-        raise LogFormatException("イベントログに必要なキーが存在しません")
+        print("イベントログに必要なキーが存在しません")
+        raise LogFormatException
 
     if not log_dict["event"].get("name"):
-        raise LogFormatException("イベントログに必要なキーが存在しません")
+        print("イベントログに必要なキーが存在しません")
+        raise LogFormatException
 
     return log_dict
 
@@ -103,7 +108,8 @@ def validate_event_data(event):
     if not event.get("name") \
             or not event.get("timestamp") \
             or not event.get("value"):
-        raise LogFormatException("イベントデータに必要なキーが存在しません")
+        print("イベントデータに必要なキーが存在しません")
+        raise LogFormatException
     return event
 
 
@@ -119,6 +125,7 @@ def export_filtering_event(event_file, target_file):
             export_csv.export_csv_header(target.keys)
 
             for l in logs:
+                
                 try:
                     event_log = EventLog(validate_event_log(l))
                 except LogFormatException:
