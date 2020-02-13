@@ -7,18 +7,15 @@ class LogFormatException(Exception):
     pass
 
 
+class TargetFileFormatException(Exception):
+    pass
+
+
 class TargetData:
     def __init__(self, data):
-        try:
-            self.data = json.loads(data)
-            self.appli_id = self.data["appli_id"]
-            self.event_name = self.data["event_name"]
-            self.keys = [
-                self.data["key1"],
-                self.data["key2"],
-            ]
-        except (json.decoder.JSONDecodeError, KeyError) as error:
-            sys.exit(f"クライアント要望ファイルに不備があります:{error}")
+        self.appli_id = data["appli_id"]
+        self.event_name = data["event_name"]
+        self.keys = data["keys"]
 
     def check_log(self, appli_id, event_name):
         if appli_id == self.appli_id \
@@ -75,6 +72,18 @@ class ExportCSV:
         print(*format_log, sep=",")
 
 
+def validate_target_data(data):
+    try:
+        data_dict = json.loads(data)
+    except json.decoder.JSONDecodeError as json_error:
+        raise TargetFileFormatException("クライアント要望ファイルに不備があります", json_error)
+
+    if len(data_dict["keys"]) > 2:
+        sys.exit("クライアント要望ファイルにキーが２つ以上指定されています")
+
+    return data_dict
+
+
 def validate_event_log(log):
     try:
         log_dict = json.loads(log)
@@ -103,7 +112,10 @@ def export_filtering_event(event_file, target_file):
         export_csv = ExportCSV()
 
         for t in targets:
-            target = TargetData(t)
+            try:
+                target = TargetData(validate_target_data(t))
+            except LogFormatException:
+                continue
             export_csv.export_csv_header(target.keys)
 
             for l in logs:
@@ -127,6 +139,5 @@ def export_filtering_event(event_file, target_file):
 
 if __name__ == "__main__":
     event_file = os.path.basename("./events.2019-08-04-03.masked.txt")
-    # event_file = os.path.basename("./events.10.txt")
     target_file = os.path.basename("./target_data.txt")
     export_filtering_event(event_file, target_file)
