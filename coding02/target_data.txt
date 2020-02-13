@@ -1,0 +1,3 @@
+{"appli_id":"fykQvokSoNNX","event_name":"_app.alive","keys":["pModel"]}
+{"appli_id":"FkcsmJqNPVBH","event_name":"_push.receive","keys":[]}
+{"appli_id":"aXH6esLPUMkD","event_name":"_update.status","keys":["locationAuthorization","pModel"]}
