@@ -1,6 +1,10 @@
-# import glob
-import os
 import json
+import os
+import sys
+
+
+class LogFormatException(Exception):
+    pass
 
 
 class TargetData:
@@ -14,25 +18,41 @@ class TargetData:
                 self.data["key2"],
             ]
         except (json.decoder.JSONDecodeError, KeyError) as error:
-            print(f"ファイルに不備があります:{error}")
-            raise
+            sys.exit(f"クライアント要望ファイルに不備があります:{error}")
 
-    def check_log(self, event):
-
-        if event["appli_id"] == self.appli_id \
-                and event["event"]["name"] == self.event_name:
+    def check_log(self, appli_id, event_name):
+        if appli_id == self.appli_id \
+                and event_name == self.event_name:
             return True
+        return False
+
+    def get_event_key(self, event):
+        event_value = []
+        for key in self.keys:
+            for e in event:
+                if e["key"] == key:
+                    event_value.append(e["value"])
+
+        return event_value
 
 
 class EventLog:
     def __init__(self, log):
-        try:
-            self.log = json.loads(log)
-        except json.decoder.JSONDecodeError as error:
-            print(f"データが壊れています: {error}")
+        self.log = log
+        self.appli_id = log["appli_id"]
+        self.event = log["event"]
+        self.event_name = self.event["name"]
 
-    def export_log(self, target_keys, target_key_values):
-        # 対象のログを都度標準出力
+
+class EventData:
+    def __init__(self, event):
+        self.name = event["name"]
+        self.timestamp = event["timestamp"]
+        self.kvs = event["value"]
+
+
+class ExportCSV:
+    def export_csv_header(self, target_keys):
         format_header = [
             "appli_id",
             "event.timestamp",
@@ -43,56 +63,70 @@ class EventLog:
         format_header.extend(target_keys)
         print(*format_header, sep=",")
 
+    def export_csv_value(self, log, target_key_values):
         format_log = [
-            self.log["appli_id"],
-            self.log["event"]["timestamp"],
-            self.log["device_type"],
-            self.log["popinfo_id"],
-            self.log["event"]["name"]
+            log["appli_id"],
+            log["event"]["timestamp"],
+            log["device_type"],
+            log["popinfo_id"],
+            log["event"]["name"]
         ]
         format_log.extend(target_key_values)
         print(*format_log, sep=",")
 
 
-class EventKey:
-    def __init__(self, e):
-        self.data = e
+def validate_event_log(log):
+    try:
+        log_dict = json.loads(log)
+    except json.decoder.JSONDecodeError as json_error:
+        raise LogFormatException("ログの形式が不正です", json_error)
 
-    def check_key(self, target_keys):
-        target_data = []
-        for tk in target_keys:
-            for j in self.data:
-                if j["key"] == tk:
-                    target_data.append(j["value"])
+    if not log_dict.get("appli_id") or not log_dict.get("event"):
+        raise LogFormatException("イベントログに必要なキーが存在しません")
 
-        return target_data
+    if not log_dict["event"].get("name"):
+        raise LogFormatException("イベントログに必要なキーが存在しません")
+
+    return log_dict
 
 
-def main(event_file, request_file):
+def validate_event_data(event):
+    if not event.get("name") \
+            or not event.get("timestamp") \
+            or not event.get("value"):
+        raise LogFormatException("イベントデータに必要なキーが存在しません")
+    return event
 
-    with open(event_file, "r") as logs, open(request_file, "r") as targets:
+
+def export_filtering_event(event_file, target_file):
+    with open(event_file, "r") as logs, open(target_file, "r") as targets:
+        export_csv = ExportCSV()
+
         for t in targets:
             target = TargetData(t)
+            export_csv.export_csv_header(target.keys)
 
-            for log in logs:
-                event = EventLog(log)
-
-                # appli_idとeventの確認
-                if not target.check_log(event.log):
+            for l in logs:
+                try:
+                    event_log = EventLog(validate_event_log(l))
+                except LogFormatException:
                     continue
 
-                # keyを確認
-                if target.keys:
-                    event_key = EventKey(event.log["event"]["value"])
-                    target_key_value = event_key.check_key(target.keys)
-                    if not target_key_value:
-                        continue
+                if not target.check_log(event_log.appli_id, event_log.event_name):
+                    continue
 
-                event.export_log(target.keys, target_key_value)
+                if target.keys:
+                    event_data = EventData(validate_event_data(
+                        event_log.event))
+                    target_event_value = target.get_event_key(event_data.kvs)
+                else:
+                    target_event_value = []
+
+                export_csv.export_csv_value(event_log.log, target_event_value)
 
 
 if __name__ == "__main__":
-    # event_log_files = os.path.basename("./events.2019-08-04-03.masked.txt")
-    event_file = os.path.basename("./events.10.txt")
-    request_file = os.path.basename("./request_data.txt")
-    main(event_file, request_file)
+    event_file = os.path.basename("./events.2019-08-04-03.masked.txt")
+    # event_file = os.path.basename("./events.10.txt")
+    target_file = os.path.basename("./target_data.txt")
+    export_filtering_event(event_file, target_file)
