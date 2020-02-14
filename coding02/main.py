@@ -4,14 +4,17 @@ import sys
 
 
 class LogFormatException(Exception):
+    """イベントログのフォーマットが崩れていた時のエラー"""
     pass
 
 
 class TargetFileFormatException(Exception):
+    """顧客要望定義ファイルのフォーマットが崩れていた時のエラー"""
     pass
 
 
 class TargetData:
+    """参照しているイベントログが求められているものかをチェックする"""
     def __init__(self, data: dict):
         self.appli_id = data["appli_id"]
         self.event_name = data["event_name"]
@@ -48,6 +51,7 @@ class TargetData:
 
 
 class EventLog:
+    """イベントログを扱う"""
     def __init__(self, log: dict):
         self.log = log
         self.appli_id = log["appli_id"]
@@ -56,6 +60,7 @@ class EventLog:
 
 
 class EventData:
+    """イベントログの中にあるイベントデータを扱うクラス"""
     def __init__(self, event: dict):
         self.name = event["name"]
         self.timestamp = event["timestamp"]
@@ -63,6 +68,7 @@ class EventData:
 
 
 class ExportCSV:
+    """ログをcsv出力する"""
     def export_csv_header(self, target_keys: list) -> None:
         """csvヘッダーを出力
 
