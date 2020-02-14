@@ -1,3 +1,4 @@
 input/
 output/
 event*.txt
+.python-version

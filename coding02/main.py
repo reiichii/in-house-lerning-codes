@@ -12,18 +12,32 @@ class TargetFileFormatException(Exception):
 
 
 class TargetData:
-    def __init__(self, data):
+    def __init__(self, data: dict):
         self.appli_id = data["appli_id"]
         self.event_name = data["event_name"]
         self.keys = data["keys"]
 
-    def check_log(self, appli_id, event_name):
+    def check_log(self, appli_id: str, event_name: str) -> bool:
+        """参照している行のログが求められているものかを確認する
+
+        Arguments:
+            appli_id {str} -- event log appli_id
+            event_name {str} -- event log event_name
+        """
         if appli_id == self.appli_id \
                 and event_name == self.event_name:
             return True
         return False
 
-    def get_event_key(self, event):
+    def get_target_event(self, event: dict) -> list:
+        """参照している行のイベントデータの中の求められているデータを取得する
+
+        Arguments:
+            event {dict} -- event data
+
+        Returns:
+            list -- Required event value
+        """
         event_value = []
         for key in self.keys:
             for e in event:
@@ -34,7 +48,7 @@ class TargetData:
 
 
 class EventLog:
-    def __init__(self, log):
+    def __init__(self, log: dict):
         self.log = log
         self.appli_id = log["appli_id"]
         self.event = log["event"]
@@ -42,14 +56,19 @@ class EventLog:
 
 
 class EventData:
-    def __init__(self, event):
+    def __init__(self, event: dict):
         self.name = event["name"]
         self.timestamp = event["timestamp"]
         self.kvs = event["value"]
 
 
 class ExportCSV:
-    def export_csv_header(self, target_keys):
+    def export_csv_header(self, target_keys: list) -> None:
+        """csvヘッダーを出力
+
+        Arguments:
+            target_keys {list}
+        """
         format_header = [
             "appli_id",
             "event.timestamp",
@@ -60,7 +79,15 @@ class ExportCSV:
         format_header.extend(target_keys)
         print(*format_header, sep=",")
 
-    def export_csv_value(self, log, target_key_values):
+    def export_csv_value(self, log: dict, target_key_values: list=[] ) -> None:
+        """csvデータを出力
+
+        Arguments:
+            log {dict} -- target log
+
+        Keyword Arguments:
+            target_key_values {[type]} -- target event value (default: {[]:list})
+        """
         format_log = [
             log["appli_id"],
             log["event"]["timestamp"],
@@ -72,7 +99,15 @@ class ExportCSV:
         print(*format_log, sep=",")
 
 
-def validate_target_data(data):
+def validate_target_data(data: str) -> dict:
+    """顧客定義ファイルのバリデーション
+
+    Arguments:
+        data {str} -- 1 line in target data file
+
+    Returns:
+        dict -- target data
+    """
     try:
         data_dict = json.loads(data)
     except json.decoder.JSONDecodeError as json_error:
@@ -86,10 +121,18 @@ def validate_target_data(data):
     return data_dict
 
 
-def validate_event_log(log):
+def validate_event_log(log: str) -> dict:
+    """参照している行のイベントログのバリデーション
+
+    Arguments:
+        log {str} -- 1 line in event log file
+
+    Returns:
+        dict -- event log
+    """
     try:
         log_dict = json.loads(log)
-    except json.decoder.JSONDecodeError as json_error:
+    except json.decoder.JSONDecodeError:
         print("ログの形式が不正です")
         raise LogFormatException
 
@@ -104,7 +147,15 @@ def validate_event_log(log):
     return log_dict
 
 
-def validate_event_data(event):
+def validate_event_data(event: dict) -> dict:
+    """イベントデータのバリデーション
+
+    Arguments:
+        event {dict} -- event data
+
+    Returns:
+        dict -- event data
+    """
     if not event.get("name") \
             or not event.get("timestamp") \
             or not event.get("value"):
@@ -113,7 +164,13 @@ def validate_event_data(event):
     return event
 
 
-def export_filtering_event(event_file, target_file):
+def export_filtering_event(event_file: str, target_file: str) -> None:
+    """対象のイベントログのみ出力する
+
+    Arguments:
+        event_file {str} -- event log file
+        target_file {str} -- target data file
+    """
     with open(event_file, "r") as logs, open(target_file, "r") as targets:
         export_csv = ExportCSV()
 
@@ -125,7 +182,7 @@ def export_filtering_event(event_file, target_file):
             export_csv.export_csv_header(target.keys)
 
             for l in logs:
-                
+
                 try:
                     event_log = EventLog(validate_event_log(l))
                 except LogFormatException:
@@ -137,11 +194,9 @@ def export_filtering_event(event_file, target_file):
                 if target.keys:
                     event_data = EventData(validate_event_data(
                         event_log.event))
-                    target_event_value = target.get_event_key(event_data.kvs)
-                else:
-                    target_event_value = []
+                    target_event_value = target.get_target_event(event_data.kvs)
 
-                export_csv.export_csv_value(event_log.log, target_event_value)
+                export_csv.export_csv_value(event_log.log)
 
 
 if __name__ == "__main__":
