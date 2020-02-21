@@ -20,17 +20,15 @@ class TargetData:
         self.event_name = data["event_name"]
         self.keys = data["keys"]
 
-    def check_log(self, appli_id: str, event_name: str) -> bool:
+    def is_target(self, appli_id: str, event_name: str) -> bool:
         """参照している行のログが求められているものかを確認する
 
         Arguments:
             appli_id {str} -- event log appli_id
             event_name {str} -- event log event_name
         """
-        if appli_id == self.appli_id \
-                and event_name == self.event_name:
-            return True
-        return False
+        return appli_id == self.appli_id \
+                and event_name == self.event_name
 
     def get_target_event(self, event: dict) -> list:
         """参照している行のイベントデータの中の求められているデータを取得する
@@ -83,7 +81,7 @@ class ExportCSV:
             "event.name"
         ]
         format_header.extend(target_keys)
-        print(*format_header, sep=",")
+        print(*format_header, sep=",") # csv.writerを使えばエスケープしてくれる
 
     def export_csv_value(self, log: dict, target_key_values: list=[] ) -> None:
         """csvデータを出力
@@ -162,6 +160,7 @@ def validate_event_data(event: dict) -> dict:
     Returns:
         dict -- event data
     """
+    #値が空だった場合想定外の出来事になる boolが返ってくるものにしたほうが良い
     if not event.get("name") \
             or not event.get("timestamp") \
             or not event.get("value"):
@@ -177,16 +176,17 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
         event_file {str} -- event log file
         target_file {str} -- target data file
     """
-    with open(event_file, "r") as logs, open(target_file, "r") as targets:
+    with open(event_file, "r") as logs, open(target_file, "r") as targets: # メモリにのせたほうがよかった
         export_csv = ExportCSV()
 
-        for t in targets:
-            try:
+        for t in targets: # こちらを内側にする
+            try: # trycacheのまずいところ: エラーに気づかない、コードの流れが読みにくくなる。よほどのケースだけ使うといいよ
                 target = TargetData(validate_target_data(t))
             except LogFormatException:
-                continue
+                continue #? 要らない
             export_csv.export_csv_header(target.keys)
 
+            logs.seek(0)
             for l in logs:
 
                 try:
@@ -194,8 +194,8 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
                 except LogFormatException:
                     continue
 
-                if not target.check_log(event_log.appli_id, event_log.event_name):
-                    continue
+                if not target.is_target(event_log.appli_id, event_log.event_name):
+                    continue # 多重ループのcontinueはたくさんあると次どこ行くか分かりにくくなる
 
                 if target.keys:
                     event_data = EventData(validate_event_data(
