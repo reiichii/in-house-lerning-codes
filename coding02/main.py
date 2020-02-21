@@ -13,7 +13,7 @@ class TargetFileFormatException(Exception):
     pass
 
 
-class TargetData:
+class ClientRequestLog:
     """参照しているイベントログが求められているものかをチェックする"""
     def __init__(self, data: dict):
         self.appli_id = data["appli_id"]
@@ -30,7 +30,7 @@ class TargetData:
         return appli_id == self.appli_id \
                 and event_name == self.event_name
 
-    def get_target_event(self, event: dict) -> list:
+    def retrieve_event(self, event: dict) -> list:
         """参照している行のイベントデータの中の求められているデータを取得する
 
         Arguments:
@@ -57,7 +57,7 @@ class EventLog:
         self.event_name = self.event["name"]
 
 
-class EventData:
+class EventItems:
     """イベントログの中にあるイベントデータを扱うクラス"""
     def __init__(self, event: dict):
         self.name = event["name"]
@@ -83,7 +83,7 @@ class ExportCSV:
         format_header.extend(target_keys)
         print(*format_header, sep=",") # csv.writerを使えばエスケープしてくれる
 
-    def export_csv_value(self, log: dict, target_key_values: list=[] ) -> None:
+    def export_csv_row(self, log: dict, target_key_values: list=[] ) -> None:
         """csvデータを出力
 
         Arguments:
@@ -103,7 +103,7 @@ class ExportCSV:
         print(*format_log, sep=",")
 
 
-def validate_target_data(data: str) -> dict:
+def validate_client_request(data: str) -> dict:
     """顧客定義ファイルのバリデーション
 
     Arguments:
@@ -151,7 +151,7 @@ def validate_event_log(log: str) -> dict:
     return log_dict
 
 
-def validate_event_data(event: dict) -> dict:
+def validate_event_items(event: dict) -> dict:
     """イベントデータのバリデーション
 
     Arguments:
@@ -181,7 +181,7 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
 
         for t in targets: # こちらを内側にする
             try: # trycacheのまずいところ: エラーに気づかない、コードの流れが読みにくくなる。よほどのケースだけ使うといいよ
-                target = TargetData(validate_target_data(t))
+                target = ClientRequestLog(validate_client_request(t))
             except LogFormatException:
                 continue #? 要らない
             export_csv.export_csv_header(target.keys)
@@ -198,11 +198,11 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
                     continue # 多重ループのcontinueはたくさんあると次どこ行くか分かりにくくなる
 
                 if target.keys:
-                    event_data = EventData(validate_event_data(
+                    event_data = EventItems(validate_event_items(
                         event_log.event))
                     target_event_value = target.get_target_event(event_data.kvs)
 
-                export_csv.export_csv_value(event_log.log)
+                export_csv.export_csv_row(event_log.log)
 
 
 if __name__ == "__main__":
