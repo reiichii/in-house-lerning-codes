@@ -163,7 +163,7 @@ def validate_event_items(event: dict) -> dict:
     Returns:
         dict -- event data
     """
-    #値が空だった場合想定外の出来事になる boolが返ってくるものにしたほうが良い
+    # 値が空だった場合想定外の出来事になる boolが返ってくるものにしたほうが良い
     if not event.get("name") \
             or not event.get("timestamp") \
             or not event.get("value"):
@@ -181,10 +181,10 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
     """
     with open(event_file, "r") as logs, open(target_file, "r") as targets: # メモリにのせたほうがよかった
         export_csv = ExportCSV()
-
-        for t in targets:
-            target = ClientRequestLog(validate_client_request(t))
-            export_csv.export_csv_header(target.keys)
+        client_request_files = targets.readlines()
+        for line in client_request_files:
+            client_request_log = ClientRequestLog(validate_client_request(line))
+            export_csv.export_csv_header(client_request_log.keys)
 
             logs.seek(0)
             for l in logs:
@@ -194,13 +194,13 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
                 except LogFormatException:
                     continue
 
-                if not target.is_target(event_log.appli_id, event_log.event_name):
+                if not client_request_log.is_target(event_log.appli_id, event_log.event_name):
                     continue
 
-                if target.keys:
+                if client_request_log.keys:
                     event_data = EventItems(validate_event_items(
                         event_log.event))
-                    target_event_value = target.retrieve_event(event_data.kvs)
+                    target_event_value = client_request_log.retrieve_event(event_data.kvs)
 
                 export_csv.export_csv_row(event_log.log)
 
