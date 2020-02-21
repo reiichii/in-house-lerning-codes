@@ -1,4 +1,5 @@
 import json
+import csv
 import os
 import sys
 
@@ -81,7 +82,8 @@ class ExportCSV:
             "event.name"
         ]
         format_header.extend(target_keys)
-        print(*format_header, sep=",") # csv.writerを使えばエスケープしてくれる
+        writer = csv.writer(sys.stdout)
+        writer.writerow(format_header)
 
     def export_csv_row(self, log: dict, target_key_values: list=[] ) -> None:
         """csvデータを出力
@@ -100,7 +102,8 @@ class ExportCSV:
             log["event"]["name"]
         ]
         format_log.extend(target_key_values)
-        print(*format_log, sep=",")
+        writer = csv.writer(sys.stdout)
+        writer.writerow(format_log)
 
 
 def validate_client_request(data: str) -> dict:
@@ -179,11 +182,8 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
     with open(event_file, "r") as logs, open(target_file, "r") as targets: # メモリにのせたほうがよかった
         export_csv = ExportCSV()
 
-        for t in targets: # こちらを内側にする
-            try: # trycacheのまずいところ: エラーに気づかない、コードの流れが読みにくくなる。よほどのケースだけ使うといいよ
-                target = ClientRequestLog(validate_client_request(t))
-            except LogFormatException:
-                continue #? 要らない
+        for t in targets:
+            target = ClientRequestLog(validate_client_request(t))
             export_csv.export_csv_header(target.keys)
 
             logs.seek(0)
@@ -195,12 +195,12 @@ def export_filtering_event(event_file: str, target_file: str) -> None:
                     continue
 
                 if not target.is_target(event_log.appli_id, event_log.event_name):
-                    continue # 多重ループのcontinueはたくさんあると次どこ行くか分かりにくくなる
+                    continue
 
                 if target.keys:
                     event_data = EventItems(validate_event_items(
                         event_log.event))
-                    target_event_value = target.get_target_event(event_data.kvs)
+                    target_event_value = target.retrieve_event(event_data.kvs)
 
                 export_csv.export_csv_row(event_log.log)
 
