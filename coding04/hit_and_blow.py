@@ -7,15 +7,16 @@ digit = 3
 
 def validate(val) -> str:
     try:
-        user_answer = str(int(val))
+        val = str(int(val))
     except ValueError:
         print("Invalid Value")
+        sys.exit()
 
-    if len(user_answer) != digit:
+    if len(val) != digit:
         print("Invalid number of digits")
+        sys.exit()
     else:
-        return user_answer
-    sys.exit
+        return val
 
 
 def check_the_answer(user_answer: str) -> bool:
