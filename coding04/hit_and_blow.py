@@ -1,8 +1,9 @@
 import sys
 from random import randrange
+from collections import Counter
 
-correct_answer = "".join([str(randrange(10)) for i in range(3)])
-digit = 3
+CORRECT_ANSWER = "".join([str(randrange(10)) for i in range(3)])
+DIGIT = 3
 
 
 def validate(val) -> str:
@@ -12,7 +13,7 @@ def validate(val) -> str:
         print("Invalid Value")
         sys.exit()
 
-    if len(val) != digit:
+    if len(val) != DIGIT:
         print("Invalid number of digits")
         sys.exit()
     else:
@@ -23,17 +24,16 @@ def check_the_answer(user_answer: str) -> bool:
     # hitを探す
     hit = 0
     blow_candidates = ""
-    for i in range(digit):
-        if correct_answer[i] == user_answer[i]:
+    for i in range(DIGIT):
+        if CORRECT_ANSWER[i] == user_answer[i]:
             hit += 1
         else:
-            blow_candidates += correct_answer[i]
-
-    if hit == digit:
+            blow_candidates += CORRECT_ANSWER[i]
+    if hit == DIGIT:
         return True
 
     # blowを探す
-    blow = len(set(list(blow_candidates)).intersection(set(list(user_answer))))
+    blow = len(list((Counter(list(blow_candidates)) & Counter(list(user_answer))).elements()))
 
     print(f"{hit}Hit {blow}Blow")
 
