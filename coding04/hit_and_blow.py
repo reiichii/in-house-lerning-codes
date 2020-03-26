@@ -2,7 +2,7 @@ import sys
 from random import randrange
 from collections import Counter
 
-CORRECT_ANSWER = "".join([str(randrange(10)) for i in range(3)])
+QUESTION = "".join([str(randrange(10)) for i in range(3)])
 DIGIT = 3
 
 
@@ -19,28 +19,27 @@ def validate(val) -> str:
     else:
         return val
 
-
-def check_the_answer(user_answer: str) -> bool:
-    # hitを探す
-    hit = 0
-    blow_candidates = ""
+def inspect_hit(answer: str) -> str:
+    hit = ""
+    mismatch = ""
     for i in range(DIGIT):
-        if CORRECT_ANSWER[i] == user_answer[i]:
-            hit += 1
+        if QUESTION[i] == answer[i]:
+            hit += QUESTION[i]
         else:
-            blow_candidates += CORRECT_ANSWER[i]
-    if hit == DIGIT:
-        return True
+            mismatch += QUESTION[i]
+    return hit, mismatch
 
-    # blowを探す
-    blow = len(list((Counter(list(blow_candidates)) & Counter(list(user_answer))).elements()))
-
-    print(f"{hit}Hit {blow}Blow")
-
+def inspect_blow(answer: str, mismatch: str) -> str:
+    d = set(list(mismatch))
+    a = set(list(answer))
+    blow = d.intersection(a)
+    return ''.join(list(blow))
 
 if __name__ == "__main__":
-    validate_user_answer = None
-    while validate_user_answer != True:
-        user_answer = validate(input("Your Number? : "))
-        validate_user_answer = check_the_answer(user_answer)
+    hit = ''
+    while len(hit) != DIGIT:
+        answer = validate(input("Your Number? : "))
+        hit, mismatch = inspect_hit(answer)
+        blow = inspect_blow(mismatch, answer)
+        print(f"{len(hit)}Hit {len(blow)}Blow")
     print("Clear!")
