@@ -3,3 +3,7 @@ output/
 others/
 event*.txt
 .python-version
+data/
+__pycache__
+hit-and-blow/
+node_modules
