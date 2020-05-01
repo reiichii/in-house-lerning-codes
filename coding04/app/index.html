@@ -32,7 +32,7 @@
 
     <script>
         document.getElementById("game-form").style.visibility = "hidden";
-        var ws = new WebSocket("ws://localhost:8100/ws");
+        var ws = new WebSocket("ws://13.115.221.39:8100/ws");
         ws.onmessage = function (event) {
             var obj = JSON.parse(event.data);
             console.log(typeof (event.data))
