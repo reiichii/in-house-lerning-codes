@@ -1,7 +1,12 @@
 from random import randrange
 
 DIGIT = 3
-QUESTION = "".join([str(randrange(10)) for i in range(DIGIT)])
+QUESTION = ""
+
+
+def create_question():
+    global QUESTION
+    QUESTION = "".join([str(randrange(10)) for i in range(DIGIT)])
 
 
 def validate(val: str) -> bool:

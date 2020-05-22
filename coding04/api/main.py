@@ -7,6 +7,7 @@ import hit_and_blow
 
 app = FastAPI()
 digit = hit_and_blow.DIGIT
+hit_and_blow.create_question()
 
 # 接続中のクライアントを識別するためのヘッダを格納
 clients = {}
@@ -42,6 +43,7 @@ async def websocket_endpoint(ws: WebSocket):
                     data = {
                         'answer': f"Clear! Winner {users.get(key)}"
                     }
+                    hit_and_blow.create_question()
                 else:
                     data = {
                         'answer': f"{users.get(key)}  Hit: {hit} Blow: {blow}"
