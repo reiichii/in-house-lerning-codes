@@ -1,0 +1,27 @@
+h1 {
+    text-align: center;
+    margin-top: 10vh;
+}
+
+ul {
+    list-style: none;
+}
+
+.app-component {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10vh 30vh 0 30vh;
+}
+
+.start-component {
+    flex-basis: 40%;
+}
+
+#game-form {
+    margin-top: 100px;
+}
+
+.game-component {
+    flex-basis: 40%;
+}

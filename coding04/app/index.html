@@ -1,0 +1,84 @@
+<link rel="stylesheet" type="text/css" href="index.css">
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>HIT&BLOW</title>
+</head>
+
+<body>
+    <h1>HIT&BLOW</h1>
+    <div class="app-component">
+        <div class="start-component">
+            <form onsubmit="sendUserName(event)">
+                <P>user name:</P>
+                <input type="text" id="messageText" autocomplete="off" />
+                <button>Start</button>
+            </form>
+            <ul id="messages"></ul>
+            <div id="game-form">
+                <form onsubmit="sendAnswer(event)">
+                    <input type="text" id="Answer" autocomplete="off" />
+                    <button>Send</button>
+                </form>
+            </div>
+        </div>
+        <div class="game-component">
+            <div class="game-answer-list">
+                <ul id="answers-list" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("game-form").style.visibility = "hidden";
+        var ws = new WebSocket("ws://13.115.221.39:8100/ws");
+        ws.onmessage = function (event) {
+            var obj = JSON.parse(event.data);
+            console.log(typeof (event.data))
+            if ("user" in obj) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(obj.user)
+                message.appendChild(content)
+                messages.appendChild(message)
+                setTimeout(openGameform(), 5000);
+            } else if ("answer" in obj) {
+                var messages = document.getElementById('answers-list')
+                var message = document.createElement('li')
+                var content = document.createTextNode(obj.answer)
+                message.appendChild(content)
+                messages.appendChild(message)
+            }
+        }
+
+        function openGameform() {
+            const gameForm = document.getElementById("game-form");
+            gameForm.style.visibility = "visible";
+        }
+
+        function sendUserName(event) {
+            var input = document.getElementById("messageText")
+            var message = {
+                'user': input.value
+            }
+            console.log(message)
+            ws.send(JSON.stringify(message))
+            input.value = ''
+            event.preventDefault()
+        }
+
+        function sendAnswer(event) {
+            var input = document.getElementById("Answer")
+            var message = {
+                'answer': input.value
+            }
+            console.log(message)
+            ws.send(JSON.stringify(message))
+            input.value = ''
+            event.preventDefault()
+        }
+    </script>
+</body>
+
+</html>
